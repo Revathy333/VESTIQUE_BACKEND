@@ -12,12 +12,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g^9-c1x%5626z@4#+*=+2x!26q2w@0v_n9b=)!u$3#v_%+7!cl'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", cast=bool, default = True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -33,6 +33,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'auth_app',
+    'drf_spectacular',
+    'admin_panel',
+    'posts_app',
 
 ]
 
@@ -129,6 +132,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # JWT Configuration
@@ -150,6 +154,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:5173",
+    "http://localhost",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -204,3 +209,49 @@ TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
 TOTP_ISSUER_NAME = 'VESTIQUE'   # shown in Google Authenticator
 SMS_OTP_EXPIRY_MINUTES = 5
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Vestique API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "DESCRIPTION": "Vestique Platform Authentication & Admin API",
+
+    # JWT Bearer Auth
+    "SECURITY": [{"BearerAuth": []}],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+        "filter": True,
+        "docExpansion": "none",
+    },
+
+    "TAGS": [
+        {"name": "auth"},
+        {"name": "admin"},
+    ],
+}
+
+
+
+# ── Celery Configuration ──────────────────────────────────────────
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+USE_X_FORWARDED_HOST = True
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100MB (was 10MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100MB
