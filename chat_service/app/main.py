@@ -2,6 +2,8 @@ from fastapi import FastAPI, WebSocket, Depends, Query, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.knowledge_base import load_knowledge 
+from app.db_indexer import index_all
+import asyncio
 
 from app.database import get_db, create_tables
 from app.auth import verify_token
@@ -26,10 +28,25 @@ app.include_router(users.router)
 app.include_router(chat.router)
 
 
+# @app.on_event("startup")
+# def startup():
+#     create_tables()
+#     load_knowledge()
+
+async def periodic_reindex(interval_seconds: int = 600):
+    while True:
+        await asyncio.sleep(interval_seconds)
+        try:
+            index_all()
+        except Exception as e:
+            print(f"[REINDEX] Error: {e}")
+
 @app.on_event("startup")
-def startup():
+async def startup():
     create_tables()
     load_knowledge()
+    index_all()
+    asyncio.create_task(periodic_reindex())
 
 
 @app.get("/health")

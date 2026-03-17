@@ -8,6 +8,7 @@ class Post(models.Model):
         related_name='posts'
     )
     caption = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

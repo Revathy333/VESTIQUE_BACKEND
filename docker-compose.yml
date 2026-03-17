@@ -1,138 +1,4 @@
 
-# services:
-
-#   # ── PostgreSQL Database ──────────────────────────────────────────
-#   db:
-#     image: postgres:15
-#     container_name: vestique_db
-#     restart: always
-#     environment:
-#       POSTGRES_DB: vestique
-#       POSTGRES_USER: postgres
-#       POSTGRES_PASSWORD: r@123   # ← change this
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "5432:5432"
-#     networks:
-#       - vestique_network
-
-#   # ── Redis ────────────────────────────────────────────────────────
-#   redis:
-#     image: redis:7-alpine
-#     container_name: vestique_redis
-#     restart: always
-#     ports:
-#       - "6379:6379"
-#     networks:
-#       - vestique_network
-
-#   # ── Django Auth Service ──────────────────────────────────────────
-#   backend_service:
-#     build:
-#       context: ./backend_service
-#       dockerfile: Dockerfile
-#     container_name: vestique_auth
-#     restart: always
-#     env_file:
-#       - ./backend_service/.env
-#     volumes:
-#       - ./backend_service:/app
-#       - media_files:/app/media
-#     ports:
-#       - "8000:8000"
-#     depends_on:
-#       - db
-#       - redis
-#     healthcheck:                                      # ← ADD THIS
-#       test: ["CMD", "curl", "-f", "http://localhost:8000/api/auth/health/"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5  
-#     networks:
-#       - vestique_network
-
-#   # ── FastAPI Chat Service ─────────────────────────────────────────
-#   chat_service:
-#     build:
-#       context: ./chat_service
-#       dockerfile: Dockerfile
-#     container_name: vestique_chat
-#     restart: always
-#     env_file:
-#       - ./chat_service/.env
-#     volumes:
-#       - ./chat_service:/app
-#       - chroma_data:/app/chroma_db 
-#     ports:
-#       - "8001:8001"
-#     depends_on:
-#       - db
-#       - redis
-#       - ollama                             
-#       - chromadb 
-
-#     environment:                           # ← add this whole block
-#       - OLLAMA_URL=http://ollama:11434
-#       - CHROMA_HOST=chromadb
-#       - CHROMA_PORT=8000
-#     networks:
-#       - vestique_network
-
-
-#       # ── Ollama (Local LLM — llama3) ──────────────────────────────────
-#   ollama:
-#     image: ollama/ollama
-#     container_name: vestique_ollama
-#     restart: always
-#     ports:
-#       - "11434:11434"
-#     volumes:
-#       - ollama_data:/root/.ollama
-#     networks:
-#       - vestique_network
-
-#   # ── ChromaDB (Vector Database) ───────────────────────────────────
-#   chromadb:
-#     image: chromadb/chroma:latest
-#     container_name: vestique_chromadb
-#     restart: always
-#     ports:
-#       - "8002:8000"
-#     volumes:
-#       - chroma_data:/chroma/chroma
-#     networks:
-#       - vestique_network
-
-#   # ── Nginx Gateway ────────────────────────────────────────────────
-#   nginx:
-#     image: nginx:alpine
-#     container_name: vestique_nginx
-#     restart: always
-#     ports:
-#       - "80:80"
-#     volumes:
-#       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-#       - media_files:/app/media
-#     depends_on:                                       # ← REPLACE depends_on block
-#       backend_service:
-#         condition: service_healthy
-#       chat_service:
-#         condition: service_healthy
-#     networks:
-#       - vestique_network
-
-# # ── Volumes ──────────────────────────────────────────────────────────
-# volumes:
-#   postgres_data:
-#   media_files:
-#   ollama_data:   
-#   chroma_data:  
-
-# # ── Network ──────────────────────────────────────────────────────────
-# networks:
-#   vestique_network:
-#     driver: bridge
 
 services:
 
@@ -297,23 +163,8 @@ services:
 
 
       # ── Celery Worker ────────────────────────────────────────────────
-  # celery_worker:
-  #   build:
-  #     context: ./backend_service
-  #     dockerfile: Dockerfile
-  #   container_name: vestique_celery
-  #   restart: always
-  #   command: celery -A backend_service worker --loglevel=info
-  #   env_file:
-  #     - ./backend_service/.env
-  #   volumes:
-  #     - ./backend_service:/app
-  #   depends_on:
-  #     - db
-  #     - redis
-  #     - backend_service
-  #   networks:
-  #     - vestique_network
+
+
 
   celery_worker:
     image: vestique_auth        # ← reuses backend image, no rebuild
@@ -330,7 +181,28 @@ services:
       - backend_service
     networks:
       - vestique_network
-  
+
+
+  # Add this service to your docker-compose.yml
+  # Place it right after the celery_worker service
+
+  celery_beat:
+    image: vestique_auth
+    container_name: vestique_celery_beat
+    restart: always
+    command: celery -A backend_service beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - ./backend_service/.env
+    volumes:
+      - ./backend_service:/app
+    depends_on:
+      - db
+      - redis
+      - backend_service
+      - celery_worker
+    networks:
+      - vestique_network
+       
 # ── Volumes ──────────────────────────────────────────────────────────
 volumes:
   postgres_data:
@@ -342,3 +214,6 @@ volumes:
 networks:
   vestique_network:
     driver: bridge
+
+
+

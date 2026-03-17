@@ -1,46 +1,4 @@
-# """
-# URL Configuration for Authentication API
-# """
 
-# from django.urls import path
-# from .views import (
-#     RegisterView,
-#     VerifyEmailView,
-#     ResendOTPView,
-#     LoginView,
-#     LogoutView,
-#     RefreshTokenView,
-#     UserProfileView,
-#     ChangePasswordView,
-#     GoogleAuthView,
-#     ForgotPasswordView,
-#     ResetPasswordView,
-# )
-
-# app_name = 'auth_app'
-
-# urlpatterns = [
-#     # Registration & Verification
-#     path('register/', RegisterView.as_view(), name='register'),
-#     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
-#     path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
-
-#     # Login & Logout
-#     path('login/', LoginView.as_view(), name='login'),
-#     path('logout/', LogoutView.as_view(), name='logout'),
-
-#     # Token Management
-#     path('token/refresh/', RefreshTokenView.as_view(), name='token-refresh'),
-
-#     # User Profile
-#     path('profile/', UserProfileView.as_view(), name='profile'),
-#     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
-#     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),  # NEW
-#     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
-
-# path('google/', GoogleAuthView.as_view(), name='google-auth'),
-
-# ]
 
 """
 URL Configuration for Authentication API.

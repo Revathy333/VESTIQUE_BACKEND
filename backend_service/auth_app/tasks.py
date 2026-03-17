@@ -1,6 +1,7 @@
 from celery import shared_task
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
+from django.utils import timezone
 
 
 @shared_task
@@ -117,3 +118,32 @@ def send_approval_email(user_email, first_name, role):
     )
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
+
+# ── Celery Beat Scheduled Tasks ───────────────────────────────────────────────
+
+@shared_task
+def cleanup_expired_otps():
+    from auth_app.models import EmailOTP, SMSOTP
+
+    now = timezone.now()
+    email_deleted, _ = EmailOTP.objects.filter(expires_at__lt=now).delete()
+    sms_deleted, _ = SMSOTP.objects.filter(expires_at__lt=now).delete()
+
+    print(f"✅ OTP Cleanup: deleted {email_deleted} email OTPs, {sms_deleted} SMS OTPs")
+    return {
+        "email_otps_deleted": email_deleted,
+        "sms_otps_deleted": sms_deleted,
+    }
+
+
+@shared_task
+def cleanup_blacklisted_tokens():
+    from auth_app.models import RefreshTokenBlacklist
+    from datetime import timedelta
+
+    cutoff = timezone.now() - timedelta(days=30)
+    deleted, _ = RefreshTokenBlacklist.objects.filter(blacklisted_at__lt=cutoff).delete()
+
+    print(f"✅ Token Cleanup: deleted {deleted} old blacklisted tokens")
+    return {"blacklisted_tokens_deleted": deleted}    

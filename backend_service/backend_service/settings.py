@@ -36,6 +36,10 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'admin_panel',
     'posts_app',
+    'storages',
+    'reviews_app',
+    'django_celery_beat',
+    'notifications_app',
 
 ]
 
@@ -189,13 +193,9 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER', default='noreply@virtualboutique.com')
 
 
-# Add this line:
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 1. Replace the 3 Python files
-# 2. Add to settings.py:
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
@@ -251,7 +251,56 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# ── Celery Beat Schedule ──────────────────────────────────────────────────────
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-expired-otps': {
+        'task': 'auth_app.tasks.cleanup_expired_otps',
+        'schedule': crontab(minute=0),
+    },
+    'cleanup-blacklisted-tokens': {
+        'task': 'auth_app.tasks.cleanup_blacklisted_tokens',
+        'schedule': crontab(hour=0, minute=0),
+    },
+}
+
 USE_X_FORWARDED_HOST = True
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100MB (was 10MB)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600   # 100MB
+
+
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
+
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+}
+
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
