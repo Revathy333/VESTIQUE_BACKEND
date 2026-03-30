@@ -1,0 +1,1 @@
+web: cd backend_service && gunicorn backend_service.wsgi:application --bind 0.0.0.0:$PORT
