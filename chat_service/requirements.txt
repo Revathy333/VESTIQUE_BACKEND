@@ -14,3 +14,8 @@ sentence-transformers
 httpx
 langchain-core
 langchain-groq
+
+
+
+motor==3.3.2
+pymongo==4.6.3

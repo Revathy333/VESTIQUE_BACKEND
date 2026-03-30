@@ -215,12 +215,44 @@
 
 import asyncio
 import json
+import httpx
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.websocket.manager import manager
 from app.redis_client import set_user_online, set_user_offline
 from app.models import ChatMessage
+
+
+async def create_message_notification(recipient_id: int, sender_id: int, message_content: str, message_id: int):
+    """
+    Create a notification in Django when a message is received
+    Calls Django backend internal endpoint to create notification and trigger FCM push
+    """
+    try:
+        # Use Nginx gateway (accessible from chat_service container)
+        url = "http://nginx/api/notifications/create-message/"
+        
+        payload = {
+            'recipient_id': recipient_id,
+            'sender_id': sender_id,
+            'title': 'New Message',
+            'body': message_content[:100],  # First 100 chars
+            'data': {
+                'message_id': message_id,
+                'sender_id': sender_id,
+                'type': 'message'
+            }
+        }
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, json=payload, timeout=10)
+            if resp.status_code in (200, 201):
+                print(f"[NOTIFICATION] Notification created for user {recipient_id}")
+            else:
+                print(f"[NOTIFICATION] Failed to create notification: {resp.status_code} - {resp.text}")
+    except Exception as e:
+        print(f"[NOTIFICATION ERROR] Failed to create notification: {e}")
 
 
 async def heartbeat(user_id: int):
@@ -284,6 +316,9 @@ async def handle_websocket(websocket: WebSocket, user_id: int, db: Session):
                 print(f"[SEND] Delivering to receiver {to_id}: {to_id in manager.active}")
                 await manager.send_to(to_id, payload)
                 await manager.send_to(user_id, payload)
+                
+                # Create notification for recipient
+                await create_message_notification(to_id, user_id, content, msg.id)
 
             # ── Typing Indicator ───────────────────────────────────────
             elif msg_type == "typing":

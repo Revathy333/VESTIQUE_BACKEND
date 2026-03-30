@@ -304,3 +304,17 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+
+# AWS Lambda Configuration for Push Notifications
+AWS_REGION = config("AWS_REGION", default="us-east-1")
+LAMBDA_FUNCTION_NAME = config("LAMBDA_FUNCTION_NAME", default="vestique-send-notification")
+
+# Firebase Configuration for Push Notifications
+FIREBASE_CREDENTIALS = config("FIREBASE_CREDENTIALS", default="")
+FIREBASE_DATABASE_URL = config("FIREBASE_DATABASE_URL", default="")
+
+# Notification Settings
+NOTIFICATION_RETENTION_DAYS = 30  # Retain notifications for 30 days
+MAX_BULK_NOTIFICATION_USERS = 1000  # Maximum users per bulk notification
+NOTIFICATION_TIMEOUT = 30  # Lambda timeout in seconds

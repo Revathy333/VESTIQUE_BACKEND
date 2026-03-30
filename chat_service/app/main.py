@@ -8,7 +8,9 @@ import asyncio
 from app.database import get_db, create_tables
 from app.auth import verify_token
 from app.routers import chat, users
+from app.routers import ai_chat 
 from app.websocket.handler import handle_websocket
+from app.mongo_database import connect_mongo, disconnect_mongo  
 
 app = FastAPI(title="Vestique Chat Service", version="1.0.0")
 
@@ -26,12 +28,9 @@ app.add_middleware(
 
 app.include_router(users.router)
 app.include_router(chat.router)
+app.include_router(ai_chat.router) 
 
 
-# @app.on_event("startup")
-# def startup():
-#     create_tables()
-#     load_knowledge()
 
 async def periodic_reindex(interval_seconds: int = 600):
     while True:
@@ -47,6 +46,12 @@ async def startup():
     load_knowledge()
     index_all()
     asyncio.create_task(periodic_reindex())
+    await connect_mongo()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await disconnect_mongo()        
 
 
 @app.get("/health")
