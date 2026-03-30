@@ -1,1 +1,1 @@
-web: cd backend_service && python manage.py collectstatic --noinput && gunicorn backend_service.wsgi
+web: cd backend_service && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn backend_service.wsgi
