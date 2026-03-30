@@ -72,3 +72,5 @@ python-dateutil>=2.8.2
 
 gunicorn
 
+dj_database_url
+

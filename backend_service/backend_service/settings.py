@@ -318,3 +318,9 @@ FIREBASE_DATABASE_URL = config("FIREBASE_DATABASE_URL", default="")
 NOTIFICATION_RETENTION_DAYS = 30  # Retain notifications for 30 days
 MAX_BULK_NOTIFICATION_USERS = 1000  # Maximum users per bulk notification
 NOTIFICATION_TIMEOUT = 30  # Lambda timeout in seconds
+
+import dj_database_url
+
+DATABASES = {
+    'default': dj_database_url.config(default='sqlite:///db.sqlite3')
+}
