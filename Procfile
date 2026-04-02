@@ -1,1 +1,1 @@
-web: cd backend_service && python manage.py migrate && python manage.py createsuperuser --noinput || true && python manage.py collectstatic --noinput && gunicorn backend_service.wsgi
+web: cd backend_service && python manage.py migrate && echo "from django.contrib.auth import get_user_model; User=get_user_model(); User.objects.filter(email='admin@gmail.com').delete(); User.objects.create_superuser('admin','admin@gmail.com','admin123')" | python manage.py shell && python manage.py collectstatic --noinput && gunicorn backend_service.wsgi
