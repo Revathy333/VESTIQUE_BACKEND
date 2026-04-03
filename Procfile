@@ -1,1 +1,1 @@
-web: cd backend_service && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn backend_service.wsgi
+web: cd backend_service && python manage.py migrate && echo "from django.contrib.auth import get_user_model; User=get_user_model(); u=User.objects.create(email='admin@gmail.com', is_staff=True, is_superuser=True); u.set_password('admin123'); u.save()" | python manage.py shell && python manage.py collectstatic --noinput && gunicorn backend_service.wsgi
