@@ -325,17 +325,3 @@ DATABASES = {
     'default': dj_database_url.config(default='sqlite:///db.sqlite3')
 }
 
-import os
-
-if os.getenv("CREATE_ADMIN") == "True":
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-
-    if not User.objects.filter(email="admin@gmail.com").exists():
-        user = User.objects.create(
-            email="admin@gmail.com",
-            is_staff=True,
-            is_superuser=True
-        )
-        user.set_password("admin123")
-        user.save()
