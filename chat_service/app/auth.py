@@ -2,7 +2,7 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status
 from decouple import config
 
-SECRET_KEY = config("DJANGO_SECRET_KEY")
+SECRET_KEY = config("DJANGO_SECRET_KEY", default="temp-secret-key")
 ALGORITHM = "HS256"
 
 
